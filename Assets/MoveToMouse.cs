@@ -9,14 +9,15 @@ public class MoveToMouse : MonoBehaviour
 
     void Start()
     {
-        mainCam = Camera.main;                 // Ambil kamera utama
+        mainCam = Camera.main;                 
         target = transform.position;
-        spriteRenderer = GetComponent<SpriteRenderer>();           // Awalnya target = posisi sekarang
+        spriteRenderer = GetComponent<SpriteRenderer>();           
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))       // Klik kiri
+        // --- Gerak pakai mouse ---
+        if (Input.GetMouseButtonDown(0))       
         {
             Vector3 mousePos = Input.mousePosition;
             mousePos.z = mainCam.WorldToScreenPoint(transform.position).z;
@@ -27,7 +28,7 @@ public class MoveToMouse : MonoBehaviour
             float rotZ = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             if (rotZ < 0) rotZ += 360f;
             transform.rotation = Quaternion.Euler(0, 0, rotZ);
-            target.z = transform.position.z;   // Tetap di plane yang sama
+            target.z = transform.position.z;   
             
             if (target.x < transform.position.x)
                 spriteRenderer.flipY = true;
@@ -35,7 +36,30 @@ public class MoveToMouse : MonoBehaviour
                 spriteRenderer.flipY = false;
         }
 
-        // Bergerak ke target
-        transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+        // --- Gerak pakai WASD ---
+        float moveX = Input.GetAxisRaw("Horizontal"); // A (-1) / D (+1)
+        float moveY = Input.GetAxisRaw("Vertical");   // S (-1) / W (+1)
+        Vector3 moveDir = new Vector3(moveX, moveY, 0).normalized;
+
+        if (moveDir != Vector3.zero)
+        {
+            transform.position += moveDir * speed * Time.deltaTime;
+
+            // Rotasi sesuai arah gerak
+            float rotZ = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg;
+            if (rotZ < 0) rotZ += 360f;
+            transform.rotation = Quaternion.Euler(0, 0, rotZ);
+
+            // Flip sprite
+            if (moveDir.x < 0)
+                spriteRenderer.flipY = true;
+            else
+                spriteRenderer.flipY = false;
+        }
+        else
+        {
+            // Kalau lagi ga pakai WASD, tetap ikutin target mouse
+            transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+        }
     }
 }
