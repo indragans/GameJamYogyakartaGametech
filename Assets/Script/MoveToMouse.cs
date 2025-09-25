@@ -6,6 +6,8 @@ public class MoveToMouse : MonoBehaviour
     private Vector3 target;
     private Camera mainCam;
     private SpriteRenderer spriteRenderer;
+    private bool moveByMouse = false;
+
 
     void Start()
     {
@@ -17,49 +19,63 @@ public class MoveToMouse : MonoBehaviour
     void Update()
     {
         // --- Gerak pakai mouse ---
-        if (Input.GetMouseButtonDown(0))       
+        if (Input.GetMouseButtonDown(0))
         {
+            moveByMouse = true; // aktifin gerak mouse
             Vector3 mousePos = Input.mousePosition;
             mousePos.z = mainCam.WorldToScreenPoint(transform.position).z;
             target = mainCam.ScreenToWorldPoint(mousePos);
-
-            // Rotasi menghadap target
-            Vector3 dir = target - transform.position;
-            float rotZ = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            if (rotZ < 0) rotZ += 360f;
-            transform.rotation = Quaternion.Euler(0, 0, rotZ);
-            target.z = transform.position.z;   
-            
-            if (target.x < transform.position.x)
-                spriteRenderer.flipY = true;
-            else
-                spriteRenderer.flipY = false;
+            target.z = transform.position.z;
         }
+
 
         // --- Gerak pakai WASD ---
         float moveX = Input.GetAxisRaw("Horizontal"); // A (-1) / D (+1)
         float moveY = Input.GetAxisRaw("Vertical");   // S (-1) / W (+1)
         Vector3 moveDir = new Vector3(moveX, moveY, 0).normalized;
-
         if (moveDir != Vector3.zero)
         {
+            moveByMouse = false; // override mouse movement kalau lagi pakai WASD
             transform.position += moveDir * speed * Time.deltaTime;
 
-            // Rotasi sesuai arah gerak
-            float rotZ = Mathf.Atan2(moveDir.y, moveDir.x) * Mathf.Rad2Deg;
-            if (rotZ < 0) rotZ += 360f;
-            transform.rotation = Quaternion.Euler(0, 0, rotZ);
+            float rotZ = 0f;
 
-            // Flip sprite
-            if (moveDir.x < 0)
-                spriteRenderer.flipY = true;
+            // cek dominasi arah
+            if (Mathf.Abs(moveDir.x) > Mathf.Abs(moveDir.y))
+            {
+                // Horizontal
+                if (moveDir.x > 0)
+                {
+                    rotZ = 0f; // kanan
+                    spriteRenderer.flipX = true;
+                }
+                else
+                {
+                    rotZ = 0f;    // kiri
+                    spriteRenderer.flipX = false;
+                }
+
+            }
             else
-                spriteRenderer.flipY = false;
+            {
+                // Vertikal
+                if (moveDir.y > 0)
+                    rotZ = -90f;  // atas
+                else
+                    rotZ = 90f;   // bawah
+
+                spriteRenderer.flipX = false;
+            }
+
+            transform.rotation = Quaternion.Euler(0, 0, rotZ);
         }
-        else
+        else if (moveByMouse)
         {
-            // Kalau lagi ga pakai WASD, tetap ikutin target mouse
             transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+
+            if (Vector3.Distance(transform.position, target) < 0.01f)
+                moveByMouse = false;
         }
     }
+
 }
