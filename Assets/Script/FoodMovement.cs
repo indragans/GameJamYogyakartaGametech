@@ -3,30 +3,30 @@ using UnityEngine;
 public class FoodMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float speed = 2f;          // kecepatan gerak
-    public float changeDirTime = 2f;  // berapa detik sekali ganti arah
-    public float turnSpeed = 2f;      // kecepatan belok (semakin besar makin cepat ganti arah)
+    public float speed = 2f;
+    public float changeDirTime = 2f;
+    public float turnSpeed = 2f;
 
-    private Vector2 direction;        // arah gerak sekarang
-    private Vector2 targetDirection;  // arah tujuan
+    private Vector2 direction;
+    private Vector2 targetDirection;
     private float timer;
 
+    private Rigidbody2D rb;
+
     [Header("Score Settings")]
-    public int scoreValue = 10;       // score yang didapat kalau ikan dimakan
+    public int scoreValue = 10;
 
     void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         PickRandomDirection();
-        direction = targetDirection; // biar awalnya langsung ada arah
+        direction = targetDirection;
     }
 
     void Update()
     {
         // Smooth rotasi ke arah baru
         direction = Vector2.Lerp(direction, targetDirection, turnSpeed * Time.deltaTime).normalized;
-
-        // Gerak ke arah sekarang
-        transform.Translate(direction * speed * Time.deltaTime);
 
         // Hitung waktu untuk ganti arah
         timer += Time.deltaTime;
@@ -37,19 +37,23 @@ public class FoodMovement : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        // Gerak lewat physics → bisa tabrak collider
+        rb.MovePosition(rb.position + direction * speed * Time.fixedDeltaTime);
+    }
+
     void PickRandomDirection()
     {
-        // Pilih arah random
         targetDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(-1f, 1f)).normalized;
     }
 
-    // Kalau ketemu Player → dimakan
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Player"))
         {
-            ScoreManager.Instance.AddScore(scoreValue); // tambah score
-            Destroy(gameObject);                        // hapus ikan
+            ScoreManager.Instance.AddScore(scoreValue);
+            Destroy(gameObject);
         }
     }
 }
